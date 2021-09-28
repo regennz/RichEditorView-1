@@ -4,11 +4,19 @@ import RichEditorView
 class ViewController: UIViewController {
     let editorView = RichEditorView()
     var prevText: String!
+    let btn = UIButton(frame: .zero)
     let toolbar = RichEditorToolbar()
+    var heightConstraint: NSLayoutConstraint!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         additionalSafeAreaInsets = .init(top: 6, left: 12, bottom: 0, right: 12)
+        
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.backgroundColor = .gray
+        btn.setTitle("Press here to dismiss keyboard", for: .normal)
+        btn.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        
         editorView.translatesAutoresizingMaskIntoConstraints = false
         editorView.delegate = self
         editorView.editingEnabled = true
@@ -18,15 +26,26 @@ class ViewController: UIViewController {
         toolbar.editor = editorView
         toolbar.delegate = self
         editorView.inputAccessoryView = toolbar
+        view.addSubview(btn)
         view.addSubview(editorView)
         let sa = view.safeAreaLayoutGuide
+        heightConstraint = editorView.heightAnchor.constraint(equalToConstant: view.frame.height)
         NSLayoutConstraint.activate([
-            editorView.topAnchor.constraint(equalTo: sa.topAnchor),
+            btn.topAnchor.constraint(equalTo: sa.topAnchor),
+            btn.centerXAnchor.constraint(equalTo: sa.centerXAnchor),
+            btn.heightAnchor.constraint(equalToConstant: 44),
+            btn.widthAnchor.constraint(equalToConstant: 300),
+            editorView.topAnchor.constraint(equalTo: btn.bottomAnchor, constant: 10),
             editorView.leadingAnchor.constraint(equalTo: sa.leadingAnchor),
             editorView.trailingAnchor.constraint(equalTo: sa.trailingAnchor),
-            editorView.bottomAnchor.constraint(equalTo: sa.bottomAnchor)
+            heightConstraint
         ])
         editorView.html = "What I'll usually do for focus and unfocus is similar to what Google Docs does. The insert link functionality is similar to Reddit's except I use a UIAlertController. There are some added and altered functionality like running your custom JS; you will just have to learn what goes on with this package, but it's a quick learn. <b>Good luck!</b> If you have any issues, Yoom will help out, so long as those issues are opened in this repo. Credits still go out to cjwirth and C. Bess" // setting the html must come AFTER the subview has been added. I'm not sure why, though. This could also not be the case after I ported this over to WKWebView
+    }
+    
+    @objc
+    func didTapButton() {
+        view.endEditing(true)
     }
 }
 
@@ -38,6 +57,10 @@ extension ViewController: RichEditorDelegate {
         } else {
             prevText = content
         }
+    }
+    
+    func richEditor(_ editor: RichEditorView, heightDidChange height: Int) {
+        heightConstraint.constant = CGFloat(height)
     }
 }
 

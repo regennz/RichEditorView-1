@@ -27,6 +27,9 @@ import UIKit
     
     /// Called when the Insert Table toolbar item is pressed
     @objc optional func richEditorToolbarInsertTable(_ toolbar: RichEditorToolbar)
+    
+    /// Called when the Text Size toolbar item is pressed.
+    @objc optional func richEditorToolbarChangeTextSize(_ toolbar: RichEditorToolbar)
 }
 
 /// RichBarButtonItem is a subclass of UIBarButtonItem that takes a callback as opposed to the target-action pattern
@@ -40,8 +43,14 @@ import UIKit
         actionHandler = handler
     }
     
-    public convenience init(title: String = "", handler: (() -> Void)? = nil) {
+    public convenience init(title: String = "", font: UIFont? = nil, handler: (() -> Void)? = nil) {
         self.init(title: title, style: .plain, target: nil, action: nil)
+        if let font = font {
+            setTitleTextAttributes([
+                NSAttributedString.Key.font : font,
+                NSAttributedString.Key.foregroundColor: UIColor.black
+            ], for: .normal)
+        }
         target = self
         action = #selector(RichBarButtonItem.buttonWasTapped)
         actionHandler = handler
@@ -73,6 +82,9 @@ import UIKit
         get { return backgroundToolbar.barTintColor }
         set { backgroundToolbar.barTintColor = newValue }
     }
+    
+    open var font: UIFont? = nil
+    open var isFontIcon: Bool = false
 
     private var toolbarScroll: UIScrollView
     private var toolbar: UIToolbar
@@ -127,14 +139,19 @@ import UIKit
                     option.action(strongSelf)
                 }
             }
-
-            if let image = option.image {
-                let button = RichBarButtonItem(image: image, handler: handler)
+            
+            if isFontIcon {
+                let button = RichBarButtonItem(title: option.fontIcon, font: font, handler: handler)
                 buttons.append(button)
             } else {
-                let title = option.title
-                let button = RichBarButtonItem(title: title, handler: handler)
-                buttons.append(button)
+                if let image = option.image {
+                    let button = RichBarButtonItem(image: image, handler: handler)
+                    buttons.append(button)
+                } else {
+                    let title = option.title
+                    let button = RichBarButtonItem(title: title, handler: handler)
+                    buttons.append(button)
+                }
             }
         }
         toolbar.items = buttons

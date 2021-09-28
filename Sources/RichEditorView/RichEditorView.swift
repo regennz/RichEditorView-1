@@ -9,7 +9,7 @@ import UIKit
 import WebKit
 
 /// RichEditorDelegate defines callbacks for the delegate of the RichEditorView
-@objc public protocol RichEditorDelegate: class {
+@objc public protocol RichEditorDelegate: AnyObject {
     /// Called when the inner height of the text being displayed changes
     /// Can be used to update the UI
     @objc optional func richEditor(_ editor: RichEditorView, heightDidChange height: Int)
@@ -41,8 +41,22 @@ private let DefaultInnerLineHeight: Int = 28
 
 public class RichEditorWebView: WKWebView {
     public var accessoryView: UIView?
-    public override var inputAccessoryView: UIView? {
+    override public var inputAccessoryView: UIView? {
         return accessoryView
+    }
+    
+    override public var safeAreaInsets: UIEdgeInsets {
+        if #available(iOS 11.0, *) {
+            let insects = super.safeAreaInsets
+            return UIEdgeInsets(top: insects.top, left: insects.left, bottom: 0, right: insects.right)
+        } else {
+            return .zero
+        }
+    }
+
+    override public var alignmentRectInsets: UIEdgeInsets {
+        let insects = super.alignmentRectInsets
+        return UIEdgeInsets(top: insects.top - 20, left: insects.left, bottom: 0, right: insects.right)
     }
 }
 
@@ -53,7 +67,7 @@ public class RichEditorWebView: WKWebView {
     
     /// Input accessory view to display over they keyboard.
     /// Defaults to nil
-    open override var inputAccessoryView: UIView? {
+    override open var inputAccessoryView: UIView? {
         get { return webView.accessoryView }
         set { webView.accessoryView = newValue }
     }
@@ -126,15 +140,29 @@ public class RichEditorWebView: WKWebView {
         }
     }
     
+    open var textContainerInset: UIEdgeInsets {
+        get { webView.scrollView.contentInset }
+        set { webView.scrollView.contentInset = newValue }
+    }
+    
+    open var keyboardDismissMode: UIScrollView.KeyboardDismissMode {
+        get { return webView.scrollView.keyboardDismissMode }
+        set { webView.scrollView.keyboardDismissMode = newValue }
+    }
+    
     // MARK: Initialization
     
-    public override init(frame: CGRect) {
+    deinit {
+        print("Deinit RichEditorWebView")
+    }
+    
+    override public init(frame: CGRect) {
         webView = RichEditorWebView()
         super.init(frame: frame)
         setup()
     }
     
-    required public init?(coder aDecoder: NSCoder) {
+    public required init?(coder aDecoder: NSCoder) {
         webView = RichEditorWebView()
         super.init(coder: aDecoder)
         setup()
@@ -149,9 +177,16 @@ public class RichEditorWebView: WKWebView {
         
         webView.scrollView.isScrollEnabled = isScrollEnabled
         webView.scrollView.showsHorizontalScrollIndicator = false
+        webView.scrollView.pinchGestureRecognizer?.isEnabled = false
         webView.scrollView.bounces = false
+        webView.scrollView.alwaysBounceHorizontal = false
+        webView.scrollView.alwaysBounceVertical = false
+        webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+        webView.scrollView.isDirectionalLockEnabled = true
+        webView.scrollView.scrollIndicatorInsets = .zero
+        webView.scrollView.clipsToBounds = true
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.delegate = self
-        webView.scrollView.clipsToBounds = false
         addSubview(webView)
         
         if let filePath = Bundle.module.url(forResource: "rich_editor", withExtension: "html") {
@@ -218,7 +253,7 @@ public class RichEditorWebView: WKWebView {
     
     /// Returns selected text
     public func getSelectedText(handler: @escaping (String?) -> Void) {
-        self.runJS("RE.selectedText()") { r in handler(r) }
+        runJS("RE.selectedText()") { r in handler(r) }
     }
     
     /// The href of the current selection, if the current selection's parent is an anchor tag.
@@ -257,6 +292,10 @@ public class RichEditorWebView: WKWebView {
     
     public func setFontSize(_ size: Int) {
         runJS("RE.setFontSize('\(size)px')")
+    }
+    
+    public func setFontFamily(_ fontFamily: String) {
+        runJS("RE.setFontFamily('\(fontFamily)');")
     }
     
     public func setEditorBackgroundColor(_ color: UIColor) {
@@ -330,7 +369,7 @@ public class RichEditorWebView: WKWebView {
     }
     
     public func blockquote() {
-        runJS("RE.setBlockquote()");
+        runJS("RE.setBlockquote()")
     }
     
     public func alignLeft() {
@@ -357,21 +396,21 @@ public class RichEditorWebView: WKWebView {
         runJS("RE.insertImage('\(url.escaped)', '\(alt.escaped)')")
     }
 
-    public func insertVideo(vidURL: String, posterURL: String="", isBase64: Bool=false) {
-            // Remember, both poster and src can be base64 encoded
-            runJS("RE.prepareInsert()")
-            var theJS: String
-            if offline == true {
-                // Assuming vidURL already in base64
-                theJS = "<div><video class='video-js' controls preload='auto'  data-setup='{}'><source src='\(vidURL)'></source></video></div>"
-            } else {
-                // Upload to server the base64 if isBase64 == true. Utilize the IDs and Video tags to your advantage. On Python web server, I use BeautifulSoup4. Use the base64 to save video in S3 and replace src with your new S3 video. Or you could just save in database.
-                let uuid = UUID().uuidString
-                theJS = "<div><video \(isBase64 ? "id='"+uuid+"'":"") class='video-js' controls preload='auto' data-setup='{}'><source src='\(vidURL)\(isBase64 ? "":"#t=0.01")'></source></video></div>"
-                // The time at the end is so that we can grab a thumbnail IF it's a link
-            }
-            runJS("RE.insertHTML('\(theJS.escaped)')")
+    public func insertVideo(vidURL: String, posterURL: String = "", isBase64: Bool = false) {
+        // Remember, both poster and src can be base64 encoded
+        runJS("RE.prepareInsert()")
+        var theJS: String
+        if offline == true {
+            // Assuming vidURL already in base64
+            theJS = "<div><video class='video-js' controls preload='auto'  data-setup='{}'><source src='\(vidURL)'></source></video></div>"
+        } else {
+            // Upload to server the base64 if isBase64 == true. Utilize the IDs and Video tags to your advantage. On Python web server, I use BeautifulSoup4. Use the base64 to save video in S3 and replace src with your new S3 video. Or you could just save in database.
+            let uuid = UUID().uuidString
+            theJS = "<div><video \(isBase64 ? "id='" + uuid + "'" : "") class='video-js' controls preload='auto' data-setup='{}'><source src='\(vidURL)\(isBase64 ? "" : "#t=0.01")'></source></video></div>"
+            // The time at the end is so that we can grab a thumbnail IF it's a link
         }
+        runJS("RE.insertHTML('\(theJS.escaped)')")
+    }
     
     public func insertLink(href: String, text: String, title: String = "") {
         runJS("RE.prepareInsert()")
@@ -395,6 +434,7 @@ public class RichEditorWebView: WKWebView {
     }
     
     // MARK: Table functionalities
+
     public func insertTable(width: Int = 2, height: Int = 2) {
         runJS("RE.prepareInsert()")
         runJS("RE.insertTable(\(width), \(height))")
@@ -420,7 +460,7 @@ public class RichEditorWebView: WKWebView {
     /// - parameter js: The JavaScript string to be run
     /// - returns: The result of the JavaScript that was run
     public func runJS(_ js: String, handler: ((String) -> Void)? = nil) {
-        webView.evaluateJavaScript(js) {(result, error) in
+        webView.evaluateJavaScript(js) { result, error in
             if let error = error {
                 print("WKWebViewJavascriptBridge Error: \(String(describing: error)) - JS: \(js)")
                 handler?("")
@@ -450,6 +490,9 @@ public class RichEditorWebView: WKWebView {
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // We use this to keep the scroll view from changing its offset when the keyboard comes up
+        if scrollView.contentOffset.x > 0 {
+            scrollView.contentOffset.x = 0
+        }
         if !isScrollEnabled {
             scrollView.bounds = webView.bounds
         }
@@ -477,18 +520,18 @@ public class RichEditorWebView: WKWebView {
                     jsonCommands.forEach(self.performCommand)
                 }
             }
-            return decisionHandler(WKNavigationActionPolicy.cancel);
+            return decisionHandler(WKNavigationActionPolicy.cancel)
         }
         
         // User is tapping on a link, so we should react accordingly
         if navigationAction.navigationType == .linkActivated {
             if let url = navigationAction.request.url {
                 if delegate?.richEditor?(self, shouldInteractWith: url) ?? false {
-                    return decisionHandler(WKNavigationActionPolicy.allow);
+                    return decisionHandler(WKNavigationActionPolicy.allow)
                 }
             }
         }
-        return decisionHandler(WKNavigationActionPolicy.allow);
+        return decisionHandler(WKNavigationActionPolicy.allow)
     }
     
     // MARK: UIGestureRecognizerDelegate
@@ -510,6 +553,7 @@ public class RichEditorWebView: WKWebView {
             }
         }
     }
+
     private func isContentEditable(handler: @escaping (Bool) -> Void) {
         if isEditorLoaded {
             // to get the "editable" value is a different property, than to disable it
@@ -531,10 +575,10 @@ public class RichEditorWebView: WKWebView {
     }
     
     private func updateHeight() {
-        runJS("document.getElementById('editor').clientHeight") { heightString in
-            let height = Int(heightString) ?? 0
+        getClientHeight { height in
             if self.editorHeight != height {
                 self.editorHeight = height
+//                self.webView.scrollView.contentSize = CGSize(width: self.frame.width, height: 300)
             }
         }
     }
@@ -543,7 +587,7 @@ public class RichEditorWebView: WKWebView {
     /// Called repeatedly to make sure the caret is always visible when inputting text.
     /// Works only if the `lineHeight` of the editor is available.
     private func scrollCaretToVisible() {
-        let scrollView = self.webView.scrollView
+        let scrollView = webView.scrollView
         
         getClientHeight(handler: { clientHeight in
             let contentHeight = clientHeight > 0 ? CGFloat(clientHeight) : scrollView.frame.height
@@ -590,24 +634,23 @@ public class RichEditorWebView: WKWebView {
                 delegate?.richEditorDidLoad?(self)
             }
             updateHeight()
-        }
-        else if method.hasPrefix("input") {
+        } else if method.hasPrefix("input") {
             scrollCaretToVisible()
             runJS("RE.getHtml()") { content in
                 self.contentHTML = content
                 self.updateHeight()
             }
-        }
-        else if method.hasPrefix("updateHeight") {
+        } else if method.hasPrefix("updateHeight") {
             updateHeight()
-        }
-        else if method.hasPrefix("focus") {
+        } else if method.hasPrefix("focus") {
             delegate?.richEditorTookFocus?(self)
-        }
-        else if method.hasPrefix("blur") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.editorHeight += 10
+                self.updateHeight()
+            }
+        } else if method.hasPrefix("blur") {
             delegate?.richEditorLostFocus?(self)
-        }
-        else if method.hasPrefix("action/") {
+        } else if method.hasPrefix("action/") {
             runJS("RE.getHtml()") { content in
                 self.contentHTML = content
                 
@@ -623,6 +666,7 @@ public class RichEditorWebView: WKWebView {
     }
     
     // MARK: - Responder Handling
+
     /// Called by the UITapGestureRecognizer when the user taps the view
     /// If we are not already the first responder, focus the editor
     @objc private func viewWasTapped() {
@@ -631,6 +675,7 @@ public class RichEditorWebView: WKWebView {
             focus(at: point)
         }
     }
+
     override open func becomeFirstResponder() -> Bool {
         if !webView.isFirstResponder {
             focus()
@@ -640,7 +685,7 @@ public class RichEditorWebView: WKWebView {
         }
     }
     
-    open override func resignFirstResponder() -> Bool {
+    override open func resignFirstResponder() -> Bool {
         blur()
         return true
     }

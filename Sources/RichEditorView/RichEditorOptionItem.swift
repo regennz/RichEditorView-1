@@ -16,6 +16,10 @@ public protocol RichEditorOption {
     /// The title of the item.
     /// If `image` is nil, this will be used for display in the RichEditorToolbar.
     var title: String { get }
+    
+    /// The font icon of the item.
+    /// This will be used for display in the RichEditorToolbar as custom option.
+    var fontIcon: String { get }
 
     /// The action to be evoked when the action is tapped
     /// - parameter editor: The RichEditorToolbar that the RichEditorOption was being displayed in when tapped.
@@ -32,13 +36,17 @@ public struct RichEditorOptionItem: RichEditorOption {
 
     /// If an `itemImage` is not specified, this is used in display
     public var title: String
+    
+    /// This is used in display as custom option
+    public var fontIcon: String
 
     /// The action to be performed when tapped
     public var handler: ((RichEditorToolbar) -> Void)
 
-    public init(image: UIImage?, title: String, action: @escaping ((RichEditorToolbar) -> Void)) {
+    public init(image: UIImage?, title: String, fontIcon: String, action: @escaping ((RichEditorToolbar) -> Void)) {
         self.image = image
         self.title = title
+        self.fontIcon = fontIcon
         self.handler = action
     }
     
@@ -76,6 +84,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
     case video
     case link
     case table
+    case fontSize
+    case separator
     
     public static let all: [RichEditorDefaultOption] = [
         //.clear,
@@ -85,7 +95,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
         .textColor, .textBackgroundColor,
         .header(1), .header(2), .header(3), .header(4), .header(5), .header(6),
         .indent, outdent, orderedList, unorderedList,
-        .alignLeft, .alignCenter, .alignRight, .image, .video, .link, .table
+        .alignLeft, .alignCenter, .alignRight, .image, .video, .link, .table,
+        .fontSize, .separator
     ]
 
     // MARK: RichEditorOption
@@ -116,6 +127,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .video: name = "insert_video"
         case .link: name = "insert_link"
         case .table: name = "insert_table"
+        case .fontSize: name = "font_size"
+        case .separator: name = "separator"
         }
         
         return UIImage(named: name, in: .module, compatibleWith: nil)
@@ -147,6 +160,39 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .video: return NSLocalizedString("Video", comment: "")
         case .link: return NSLocalizedString("Link", comment: "")
         case .table: return NSLocalizedString("Table", comment: "")
+        case .fontSize: return NSLocalizedString("Size", comment: "")
+        case .separator: return NSLocalizedString("|", comment: "")
+        }
+    }
+    
+    public var fontIcon: String {
+        switch self {
+        case .clear: return "􀆙"
+        case .undo: return "􀱍"
+        case .redo: return "􀱓"
+        case .bold: return "􀅓"
+        case .italic: return "􀅔"
+        case .underline: return "􀅕"
+        case .checkbox: return "􀃲"
+        case .subscript: return "􀓡"
+        case .superscript: return "􀓢"
+        case .strike: return "􀅖"
+        case .textColor: return "􀎗"
+        case .textBackgroundColor: return "􀎑"
+        case .header(let h): return "H\(h)"
+        case .indent: return "􀋵"
+        case .outdent: return "􀋶"
+        case .orderedList: return "􀋲"
+        case .unorderedList: return "􀋳"
+        case .alignLeft: return "􀌀"
+        case .alignCenter: return "􀌁"
+        case .alignRight: return "􀌂"
+        case .image: return "􀏅"
+        case .video: return "􀍉"
+        case .link: return "􀉣"
+        case .table: return "􀏣"
+        case .fontSize: return "􀅐"
+        case .separator: return "|"
         }
     }
     
@@ -176,6 +222,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .video: toolbar.delegate?.richEditorToolbarInsertVideo?(toolbar)
         case .link: toolbar.delegate?.richEditorToolbarInsertLink?(toolbar)
         case .table: toolbar.delegate?.richEditorToolbarInsertTable?(toolbar)
+        case .fontSize: toolbar.delegate?.richEditorToolbarChangeTextSize?(toolbar)
+        case .separator: break
         }
     }
 }
