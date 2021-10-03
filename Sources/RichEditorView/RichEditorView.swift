@@ -182,10 +182,12 @@ public class RichEditorWebView: WKWebView {
         webView.scrollView.alwaysBounceHorizontal = false
         webView.scrollView.alwaysBounceVertical = false
         webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+        if #available(iOS 11.0, *) {
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+        }
         webView.scrollView.isDirectionalLockEnabled = true
         webView.scrollView.scrollIndicatorInsets = .zero
         webView.scrollView.clipsToBounds = true
-        webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.delegate = self
         addSubview(webView)
         
@@ -196,6 +198,12 @@ public class RichEditorWebView: WKWebView {
         tapRecognizer.addTarget(self, action: #selector(viewWasTapped))
         tapRecognizer.delegate = self
         addGestureRecognizer(tapRecognizer)
+        
+        // Fix issue: have extra bottom space when open keyboard
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.removeObserver(webView, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+        notificationCenter.removeObserver(webView, name: UIResponder.keyboardWillShowNotification, object: nil)
+        notificationCenter.removeObserver(webView, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     // MARK: - Rich Text Editing
@@ -578,7 +586,6 @@ public class RichEditorWebView: WKWebView {
         getClientHeight { height in
             if self.editorHeight != height {
                 self.editorHeight = height
-//                self.webView.scrollView.contentSize = CGSize(width: self.frame.width, height: 300)
             }
         }
     }
@@ -644,8 +651,9 @@ public class RichEditorWebView: WKWebView {
             updateHeight()
         } else if method.hasPrefix("focus") {
             delegate?.richEditorTookFocus?(self)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.editorHeight += 10
+                self.scrollCaretToVisible()
                 self.updateHeight()
             }
         } else if method.hasPrefix("blur") {
