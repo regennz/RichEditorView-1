@@ -17,6 +17,9 @@ import WebKit
     /// Called whenever the content inside the view changes
     @objc optional func richEditor(_ editor: RichEditorView, contentDidChange content: String)
     
+    /// Called when content selected
+    @objc optional func richEditor(_ editor: RichEditorView, selectedTextAttributeDidChange attribute: TextAttribute)
+    
     /// Called when the rich editor starts editing
     @objc optional func richEditorTookFocus(_ editor: RichEditorView)
     
@@ -626,6 +629,75 @@ public class RichEditorWebView: WKWebView {
         })
     }
     
+    private func highlighItem(_ data: TextAttribute) {
+        if let toolbar = inputAccessoryView as? RichEditorToolbar,
+           let items = toolbar.items
+        {
+            for item in items {
+                if let option = item as? RichBarButtonItem {
+                    switch option.type {
+                        case RichEditorDefaultOption.bold.type:
+                            option.active = data.format.hasBold
+                        case RichEditorDefaultOption.italic.type:
+                            option.active = data.format.hasItalic
+                        case RichEditorDefaultOption.underline.type:
+                            option.active = data.format.hasUnderline
+                        case RichEditorDefaultOption.strike.type:
+                            option.active = data.format.hasStrikethrough
+                        case RichEditorDefaultOption.subscript.type:
+                            option.active = data.format.hasSubscript
+                        case RichEditorDefaultOption.superscript.type:
+                            option.active = data.format.hasSuperscript
+                        case RichEditorDefaultOption.orderedList.type:
+                            option.active = data.format.hasOrderedList
+                        case RichEditorDefaultOption.unorderedList.type:
+                            option.active = data.format.hasUnorderedList
+                        case RichEditorDefaultOption.alignLeft.type:
+                            option.active = data.format.hasJustifyLeft
+                        case RichEditorDefaultOption.alignCenter.type:
+                            option.active = data.format.hasJustifyCenter
+                        case RichEditorDefaultOption.alignRight.type:
+                            option.active = data.format.hasJustifyRight
+                        case "h1":
+                            option.active = data.format.hasHeading1
+                        case "h2":
+                            option.active = data.format.hasHeading2
+                        case "h3":
+                            option.active = data.format.hasHeading3
+                        case "h4":
+                            option.active = data.format.hasHeading4
+                        case "h5":
+                            option.active = data.format.hasHeading5
+                        case "h6":
+                            option.active = data.format.hasHeading6
+                        case RichEditorDefaultOption.textColor.type:
+                            option.tintColor = data.textInfo.color
+                        case RichEditorDefaultOption.textBackgroundColor.type:
+                            option.tintColor = data.textInfo.backgroundColor
+                        case RichEditorDefaultOption.fontSize.type:
+                            option.title = "\(data.textInfo.size)px"
+                        default:
+                            break
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Checking content attribute
+    private func enabledEditingItems() {
+        runJS("RE.getStyles()") { style in
+            do {
+                let data = Data(style.utf8)
+                let textAttribute = try JSONDecoder().decode(TextAttribute.self, from: data)
+                self.highlighItem(textAttribute)
+                self.delegate?.richEditor?(self, selectedTextAttributeDidChange: textAttribute)
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
     /// Called when actions are received from JavaScript
     /// - parameter method: String with the name of the method and optional parameters that were passed in
     private func performCommand(_ method: String) {
@@ -670,6 +742,8 @@ public class RichEditorWebView: WKWebView {
                 
                 self.delegate?.richEditor?(self, handle: action)
             }
+        } else if method.hasPrefix("selectionchange") {
+            enabledEditingItems()
         }
     }
     

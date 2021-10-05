@@ -30,6 +30,10 @@ public struct RichTextEditor: View {
                 parent.text = content
             }
             
+            public func richEditor(_ editor: RichEditorView, selectedTextAttributeDidChange attribute: TextAttribute) {
+                print(attribute)
+            }
+            
             public func richEditor(_ editor: RichEditorView, heightDidChange height: Int) {
                 parent.height = CGFloat(height)
             }
@@ -53,8 +57,13 @@ public struct RichTextEditor: View {
                 toolbar.editor?.setTextColor(color)
             }
             
+            public func richEditorToolbarChangeBackgroundColor(_ toolbar: RichEditorToolbar) {
+                let color = randomColor()
+                toolbar.editor?.setTextBackgroundColor(color)
+            }
+            
             public func richEditorToolbarChangeTextSize(_ toolbar: RichEditorToolbar) {
-                toolbar.editor?.setFontSize(40)
+                toolbar.editor?.setFontSize(30)
             }
         }
         
@@ -113,6 +122,7 @@ public struct RichTextEditor: View {
             editor.setFontFamily(font.familyName)
             
             let toolbar = RichEditorToolbar(frame: CGRect(x: 0, y: 0, width: 100, height: 44))
+            toolbar.activeColor = UIColor(red: 0.0, green: 169.0 / 255.0, blue: 1.0, alpha: 1.0)
             toolbar.options = RichEditorDefaultOption.all
             toolbar.editor = editor
             toolbar.delegate = context.coordinator

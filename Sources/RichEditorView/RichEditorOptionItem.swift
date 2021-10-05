@@ -20,6 +20,8 @@ public protocol RichEditorOption {
     /// The font icon of the item.
     /// This will be used for display in the RichEditorToolbar as custom option.
     var fontIcon: String { get }
+    
+    var type : String { get }
 
     /// The action to be evoked when the action is tapped
     /// - parameter editor: The RichEditorToolbar that the RichEditorOption was being displayed in when tapped.
@@ -39,11 +41,15 @@ public struct RichEditorOptionItem: RichEditorOption {
     
     /// This is used in display as custom option
     public var fontIcon: String
+    
+    /// Type of option
+    public var type: String
 
     /// The action to be performed when tapped
     public var handler: ((RichEditorToolbar) -> Void)
 
-    public init(image: UIImage?, title: String, fontIcon: String, action: @escaping ((RichEditorToolbar) -> Void)) {
+    public init(type: String, image: UIImage?, title: String, fontIcon: String, action: @escaping ((RichEditorToolbar) -> Void)) {
+        self.type = type
         self.image = image
         self.title = title
         self.fontIcon = fontIcon
@@ -86,17 +92,19 @@ public enum RichEditorDefaultOption: RichEditorOption {
     case table
     case fontSize
     case separator
+    case done
     
     public static let all: [RichEditorDefaultOption] = [
         //.clear,
         //.undo, .redo,
+        .done,
         .bold, .italic, .underline,
         .checkbox, .subscript, .superscript, .strike,
         .textColor, .textBackgroundColor,
         .header(1), .header(2), .header(3), .header(4), .header(5), .header(6),
         .indent, outdent, orderedList, unorderedList,
         .alignLeft, .alignCenter, .alignRight, .image, .video, .link, .table,
-        .fontSize, .separator
+        .fontSize
     ]
 
     // MARK: RichEditorOption
@@ -129,6 +137,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .table: name = "insert_table"
         case .fontSize: name = "font_size"
         case .separator: name = "separator"
+        case .done: name = "done"
         }
         
         return UIImage(named: name, in: .module, compatibleWith: nil)
@@ -162,6 +171,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .table: return NSLocalizedString("Table", comment: "")
         case .fontSize: return NSLocalizedString("Size", comment: "")
         case .separator: return NSLocalizedString("|", comment: "")
+        case .done: return NSLocalizedString("Done", comment: "")
         }
     }
     
@@ -182,8 +192,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .header(let h): return "H\(h)"
         case .indent: return "􀋵"
         case .outdent: return "􀋶"
-        case .orderedList: return "􀋲"
-        case .unorderedList: return "􀋳"
+        case .orderedList: return "􀋴"
+        case .unorderedList: return "􀢽"
         case .alignLeft: return "􀌀"
         case .alignCenter: return "􀌁"
         case .alignRight: return "􀌂"
@@ -193,6 +203,39 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .table: return "􀏣"
         case .fontSize: return "􀅐"
         case .separator: return "|"
+        case .done: return "􀓖"
+        }
+    }
+    
+    public var type: String {
+        switch self {
+        case .clear: return "clear"
+        case .undo: return "undo"
+        case .redo: return "redo"
+        case .bold: return "bold"
+        case .italic: return "italic"
+        case .underline: return "underline"
+        case .checkbox: return "checkbox"
+        case .subscript: return "subscript"
+        case .superscript: return "superscript"
+        case .strike: return "strikethrough"
+        case .textColor: return "text_color"
+        case .textBackgroundColor: return "bg_color"
+        case .header(let h): return "h\(h)"
+        case .indent: return "indent"
+        case .outdent: return "outdent"
+        case .orderedList: return "ordered_list"
+        case .unorderedList: return "unordered_list"
+        case .alignLeft: return "justify_left"
+        case .alignCenter: return "justify_center"
+        case .alignRight: return "justify_right"
+        case .image: return "insert_image"
+        case .video: return "insert_video"
+        case .link: return "insert_link"
+        case .table: return "insert_table"
+        case .fontSize: return "font_size"
+        case .separator: return "separator"
+        case .done: return "done"
         }
     }
     
@@ -224,6 +267,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .table: toolbar.delegate?.richEditorToolbarInsertTable?(toolbar)
         case .fontSize: toolbar.delegate?.richEditorToolbarChangeTextSize?(toolbar)
         case .separator: break
+        case .done: toolbar.editor?.endEditing(true)
         }
     }
 }

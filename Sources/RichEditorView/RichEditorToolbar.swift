@@ -34,17 +34,45 @@ import UIKit
 
 /// RichBarButtonItem is a subclass of UIBarButtonItem that takes a callback as opposed to the target-action pattern
 @objcMembers open class RichBarButtonItem: UIBarButtonItem {
+    private var font: UIFont? = nil
+    
     open var actionHandler: (() -> Void)?
     
-    public convenience init(image: UIImage? = nil, handler: (() -> Void)? = nil) {
-        self.init(image: image, style: .plain, target: nil, action: nil)
+    open var activeColor: UIColor = .systemBlue
+    open var normalColor: UIColor = .black
+    
+    open var type: String = ""
+    
+    open var active: Bool = false {
+        didSet {
+            tintColor = active ? activeColor : normalColor
+        }
+    }
+    
+    open override var tintColor: UIColor? {
+        didSet {
+            if let color = tintColor, let font = font {
+                setTitleTextAttributes([
+                    NSAttributedString.Key.font : font,
+                    NSAttributedString.Key.foregroundColor: color
+                ], for: .normal)
+            }
+        }
+    }
+    
+    public convenience init(type: String, image: UIImage? = nil, activeColor: UIColor = .systemBlue, normalColor: UIColor = .black, handler: (() -> Void)? = nil) {
+        self.init(image: image?.withRenderingMode(.alwaysTemplate), style: .plain, target: nil, action: nil)
         target = self
         action = #selector(RichBarButtonItem.buttonWasTapped)
         actionHandler = handler
+        self.type = type
+        self.activeColor = activeColor
+        self.normalColor = normalColor
     }
     
-    public convenience init(title: String = "", font: UIFont? = nil, handler: (() -> Void)? = nil) {
+    public convenience init(type: String, title: String = "", font: UIFont? = nil, activeColor: UIColor = .systemBlue, normalColor: UIColor = .black, handler: (() -> Void)? = nil) {
         self.init(title: title, style: .plain, target: nil, action: nil)
+        self.font = font
         if let font = font {
             setTitleTextAttributes([
                 NSAttributedString.Key.font : font,
@@ -54,6 +82,9 @@ import UIKit
         target = self
         action = #selector(RichBarButtonItem.buttonWasTapped)
         actionHandler = handler
+        self.type = type
+        self.activeColor = activeColor
+        self.normalColor = normalColor
     }
     
     @objc func buttonWasTapped() {
@@ -81,6 +112,15 @@ import UIKit
     open var barTintColor: UIColor? {
         get { return backgroundToolbar.barTintColor }
         set { backgroundToolbar.barTintColor = newValue }
+    }
+    
+    /// The color for option active
+    open var activeColor: UIColor = .systemBlue
+    /// The color for option inactive
+    open var normalColor: UIColor = .black
+    
+    open var items: [UIBarButtonItem]? {
+        return toolbar.items
     }
     
     open var font: UIFont? = nil
@@ -141,15 +181,15 @@ import UIKit
             }
             
             if isFontIcon {
-                let button = RichBarButtonItem(title: option.fontIcon, font: font, handler: handler)
+                let button = RichBarButtonItem(type: option.type, title: option.fontIcon, font: font, activeColor: activeColor, normalColor: normalColor, handler: handler)
                 buttons.append(button)
             } else {
                 if let image = option.image {
-                    let button = RichBarButtonItem(image: image, handler: handler)
+                    let button = RichBarButtonItem(type: option.type, image: image, activeColor: activeColor, normalColor: normalColor, handler: handler)
                     buttons.append(button)
                 } else {
                     let title = option.title
-                    let button = RichBarButtonItem(title: title, handler: handler)
+                    let button = RichBarButtonItem(type: option.type, title: title, activeColor: activeColor, normalColor: normalColor, handler: handler)
                     buttons.append(button)
                 }
             }

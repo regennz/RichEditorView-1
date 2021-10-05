@@ -19,9 +19,17 @@ var RE = {};
 
 RE.editor = document.getElementById('editor');
 
+let selectionEndTimeout = null;
 // Not universally supported, but seems to work in iOS 7 and 8
 document.addEventListener("selectionchange", function() {
-    RE.backuprange();
+    // wait 500 ms after the last selection change event
+    if (selectionEndTimeout) {
+      clearTimeout(selectionEndTimeout);
+    }
+    selectionEndTimeout = setTimeout(function() {
+        RE.callback("selectionchange");
+        RE.backuprange();
+    }, 500);
 });
 
 //looks specifically for a Range selection and not a Caret selection
@@ -65,6 +73,11 @@ RE.editor.addEventListener("focus", function() {
 RE.editor.addEventListener("blur", function() {
     RE.callback("blur");
 });
+
+RE.getStyles = function() {
+    let style = HS.getSelectedStyles();
+    return JSON.stringify(style);
+}
 
 RE.customAction = function(action) {
     RE.callback("action/" + action);
