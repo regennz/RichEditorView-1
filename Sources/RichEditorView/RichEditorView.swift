@@ -61,6 +61,12 @@ public class RichEditorWebView: WKWebView {
         let insects = super.alignmentRectInsets
         return UIEdgeInsets(top: insects.top - 20, left: insects.left, bottom: 0, right: insects.right)
     }
+    
+    public var unroundedContentOffsetY: CGFloat = 0 {
+        didSet {
+            scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x, y: unroundedContentOffsetY)
+        }
+    }
 }
 
 /// RichEditorView is a UIView that displays richly styled text, and allows it to be edited in a WYSIWYG fashion.
