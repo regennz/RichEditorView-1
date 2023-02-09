@@ -93,6 +93,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
     case fontSize
     case separator
     case done
+    case spacer
     
     public static let all: [RichEditorDefaultOption] = [
         //.clear,
@@ -138,6 +139,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .fontSize: name = "font_size"
         case .separator: name = "separator"
         case .done: name = "done"
+        case .spacer: name = ""
         }
         
         return UIImage(named: name, in: .module, compatibleWith: nil)
@@ -172,6 +174,8 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .fontSize: return NSLocalizedString("Size", comment: "")
         case .separator: return NSLocalizedString("|", comment: "")
         case .done: return NSLocalizedString("Done", comment: "")
+        case .spacer: return NSLocalizedString(" ", comment: "")
+
         }
     }
     
@@ -204,6 +208,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .fontSize: return "􀅐"
         case .separator: return "|"
         case .done: return "􀓖"
+        case .spacer: return " "
         }
     }
     
@@ -236,6 +241,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .fontSize: return "font_size"
         case .separator: return "separator"
         case .done: return "done"
+        case .spacer: return "spacer"
         }
     }
     
@@ -268,6 +274,7 @@ public enum RichEditorDefaultOption: RichEditorOption {
         case .fontSize: toolbar.delegate?.richEditorToolbarChangeTextSize?(toolbar)
         case .separator: break
         case .done: toolbar.editor?.endEditing(true)
+        case .spacer: break
         }
     }
 }

@@ -173,6 +173,7 @@ import UIKit
     
     private func updateToolbar() {
         var buttons = [UIBarButtonItem]()
+        var spacerCount = 0
         for option in options {
             let handler = { [weak self] in
                 if let strongSelf = self {
@@ -180,7 +181,13 @@ import UIKit
                 }
             }
             
-            if isFontIcon {
+            if option.type == RichEditorDefaultOption.spacer.type {
+                let button = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+                button.tag = 111
+                spacerCount += 1
+                button.width = 28.0
+                buttons.append(button)
+            } else if isFontIcon {
                 let button = RichBarButtonItem(type: option.type, title: option.fontIcon, font: font, activeColor: activeColor, normalColor: normalColor, handler: handler)
                 buttons.append(button)
             } else {
@@ -196,6 +203,7 @@ import UIKit
         }
         toolbar.items = buttons
 
+        let screenSize: CGRect = UIScreen.main.bounds
         let defaultIconWidth: CGFloat = 28
         let barButtonItemMargin: CGFloat = 12
         let width: CGFloat = buttons.reduce(0) {sofar, new in
@@ -206,13 +214,34 @@ import UIKit
             }
         }
         
-        if width < frame.size.width {
-            toolbar.frame.size.width = frame.size.width + barButtonItemMargin
+        print("FRAME \(frame.size.width) \(width) \(screenSize.width)")
+        if width < screenSize.width {
+            toolbar.frame.size.width = screenSize.width
+            
+            let availableSpace: CGFloat = screenSize.width - width
+            let itemWidth: CGFloat = defaultIconWidth + availableSpace / CGFloat(spacerCount)
+            
+            print("AVAILABLE \(availableSpace) each \(itemWidth)")
+            // find the flexi one and make it flexi
+            if toolbar.items != nil {
+                for item in toolbar.items! {
+                    if item.tag == 111 {
+                        item.width = itemWidth
+                    }
+                }
+            }
+            toolbarScroll.contentSize.width = screenSize.width
+
         } else {
             toolbar.frame.size.width = width + barButtonItemMargin
+            
+            toolbarScroll.contentSize.width = width
+
         }
         toolbar.frame.size.height = 44
-        toolbarScroll.contentSize.width = width
+        print("Toolbar width \(width) \(toolbar.frame.size.width)")
+        
+        
     }
     
 }
