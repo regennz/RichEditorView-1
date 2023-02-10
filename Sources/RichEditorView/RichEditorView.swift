@@ -42,33 +42,6 @@ import WebKit
 /// The value we hold in order to be able to set the line height before the JS completely loads.
 private let DefaultInnerLineHeight: Int = 28
 
-public class RichEditorWebView: WKWebView {
-    public var accessoryView: UIView?
-    override public var inputAccessoryView: UIView? {
-        return accessoryView
-    }
-    
-    override public var safeAreaInsets: UIEdgeInsets {
-        if #available(iOS 11.0, *) {
-            let insects = super.safeAreaInsets
-            return UIEdgeInsets(top: insects.top, left: insects.left, bottom: 0, right: insects.right)
-        } else {
-            return .zero
-        }
-    }
-
-    override public var alignmentRectInsets: UIEdgeInsets {
-        let insects = super.alignmentRectInsets
-        return UIEdgeInsets(top: insects.top - 20, left: insects.left, bottom: 0, right: insects.right)
-    }
-    
-    public var unroundedContentOffsetY: CGFloat = 0 {
-        didSet {
-            scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x, y: unroundedContentOffsetY)
-        }
-    }
-}
-
 /// RichEditorView is a UIView that displays richly styled text, and allows it to be edited in a WYSIWYG fashion.
 @objcMembers open class RichEditorView: UIView, UIScrollViewDelegate, WKNavigationDelegate, UIGestureRecognizerDelegate {
     /// The delegate that will receive callbacks when certain actions are completed.
@@ -183,6 +156,9 @@ public class RichEditorWebView: WKWebView {
         webView.navigationDelegate = self
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.configuration.dataDetectorTypes = WKDataDetectorTypes()
+        
+//    https://stackoverflow.com/questions/32449870/programmatically-focus-on-a-form-in-a-webview-wkwebview?noredirect=1&lq=1
+        webView.keyboardDisplayRequiresUserAction = false
         
         webView.scrollView.isScrollEnabled = isScrollEnabled
         webView.scrollView.showsHorizontalScrollIndicator = false
