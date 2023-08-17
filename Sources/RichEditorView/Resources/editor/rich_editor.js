@@ -339,7 +339,7 @@ RE.insertLink = function(url, text, title) {
         sel.removeAllRanges();
         sel.addRange(range);
     }
-    RE.callback();
+    RE.callback("input");
 };
 
 RE.prepareInsert = function() {
