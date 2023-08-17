@@ -16,6 +16,11 @@
 
 @charset "UTF-8";
 
+@font-face {
+    font-family: 'ProximaNova';
+    src: url("ProximaNova-Regular.otf") format('opentype');
+}
+
 :root {
     color-scheme: light dark;
 }
@@ -28,7 +33,8 @@ body {
     min-height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    font: -apple-system-body;
+    font-family: 'ProximaNova', -apple-system-body;
+    color: #3B4043;
 }
 
 body, h1, p, ul, ol {
@@ -67,7 +73,7 @@ div {
     overflow-y: auto;
     overflow-x: hidden;
     display: block;
-    font-size: 12pt;
+    font-size: 14pt;
 }
 
 input[type=checkbox] {
